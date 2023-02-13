@@ -4,37 +4,37 @@ module buffer #(
 		) (
 		input clk, rst, wr, rd, fifo, 
 		input [word_size -1 : 0] data_in,
-		output full, empty,
-		output reg [word_size -1 : 0] data_out 
+		output reg full, empty,
+		output reg [word_size -1 : 0] data_out,
+		output reg [$clog2(capacity) - 1 : 0] fullnes
 		);
 
-		reg [$clog2(capacity) : 0] start_a, end_a; 
+		reg [$clog2(capacity) - 1 : 0] start_a, end_a; 
 		
 		reg [word_size - 1 : 0] memory [capacity - 1 : 0];
 
-		assign full = (start_a - 1 == end_a);
-		assign empty = (start_a == end_a);
-
-		always @(clk) begin
+		always @(posedge clk) begin
 			if(rst) begin 
 				start_a = 0;
-				end_a = 0;
+				end_a = -1;
 			end
 
 			if(wr && !fifo) begin
-				memory [end_a] = data_in; 
 				end_a = end_a + 1;
+				memory [end_a] = data_in; 
 			end
 
 			if(wr && fifo) begin
-				memory [start_a] = data_in; 
 				start_a = start_a - 1;
+				memory [start_a] = data_in; 
 			end
 			
 			if(rd) begin
 				data_out = memory [start_a];
 				start_a = start_a + 1;
 			end
+			fullnes = end_a - start_a + 1;
+			full = fullnes == 3;
+			empty = fullnes == 0;
 		end
-
 endmodule
